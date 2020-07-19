@@ -24,30 +24,37 @@ exports.getDevice = async function(client, debug) {
 
     // All devices support addresss 0 as the ARM reset vector so if the vector is
     // a ARM7TDMI branch, then assume we have an Atmel SAM7/9 CHIPID register
-    if ((await client.readWord(0x0)) & 0xff000000 == 0xea000000) {
+    if (((await client.readWord(0x0)) & 0xff000000) === 0xea000000) {
         chipID = await client.readWord(0xfffff240);
     } else {
 
         // Next try the ARM CPUID register since all Cortex-M devices support it
         cpuID = (await client.readWord(0xe000ed00)) & 0x0000fff0;
         
-        if (cpuID === 0xC600) { // Cortex-M0+
+        // Cortex-M0+
+        if (cpuID === 0xC600) {
             
             // These should support the ARM device ID register
             deviceID = await client.readWord(0x41002018);
         
-        } else if (cpuID === 0xC240) { // Cortex M4
+        // Cortex M4
+        } else if (cpuID === 0xC240) {
             
             // SAM4 processors have a reset vector to the SAM-BA ROM
             if (((await client.readWord(0x4)) & 0xfff00000) === 0x800000) {
                 [chipID, extChipID] = await readChipID(client, chipID, extChipID);
+
+            // Else we should have a device that supports the ARM device ID register
             } else {
                 deviceID = await client.readWord(0x41002018);
+            
             }
         
+        // For all other Cortex versions try the Atmel chip ID registers
         } else {
             [chipID, extChipID] = await readChipID(client, chipID, extChipID);
         }
+
     }
 
     if (debug)
