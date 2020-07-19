@@ -18,8 +18,12 @@ const ErrIO = Symbol('io-error');
 const ErrUnsupported = Symbol('unsupported');
 const ErrNotImplemented = Symbol('not-implemented');
 
+function info(msg, ...args) 	{ console.log("[I:sam-ba] " + msg, ...args); }
+function warn(msg, ...args) 	{ console.warn("[W:sam-ba] " + msg, ...args); }
+function error(msg, ...args)	{ console.error("[E:sam-ba] " + msg, ...args); }
+
 exports.Client = class Client {
-	constructor(port) {
+	constructor(port, debug = false) {
 		this._port = port;
 		this._isUSB = port.isUSB;
 
@@ -30,26 +34,39 @@ exports.Client = class Client {
 		};
 
 		this._readBufferSize = 0;
-		this._debug = false;
+		this._debug = debug;
 	}
 
 	async init() {
-		this._port.timeout(TIMEOUT_QUICK);
+		if (this._debug)
+			info("Initialising...");
 
 		// Flush garbage
 		await this._port.read(Buffer.alloc(1024));
 
-		// Have skipped the auto-baud stuff.
+		// Have skipped BOSSA's auto-baud stuff
+		// (this library expects to receive a preconigured port)
+		
+		this._port.put('#'.charCodeAt(0));
+		
+		this._port.timeout(TIMEOUT_QUICK);
 
+		if (this._debug)
+			info("Setting binary mode");
+		
 		const bSetBinMode = Buffer.from('N#');
 		await this._port.write(bSetBinMode);
 		await this._port.read(bSetBinMode);
 
 		const ver = await this.version();
+		if (this._debug)
+			info("Version: %s", ver);
 
-		// Skipping the Arduino stuff
+		// Skipping the Arduino stuff for now
 
 		this._port.timeout(TIMEOUT_NORMAL);
+
+		return ver;
 	}
 
 	async writeByte(addr, val) {
@@ -126,14 +143,27 @@ exports.Client = class Client {
 		await this._writeFully(Buffer.from('V#'));
 
 		this._port.timeout(TIMEOUT_QUICK);
-		const response = Buffer.alloc(256);
+		const response = Buffer.alloc(255);
 		const size = await this._port.read(response);
 		this._port.timeout(TIMEOUT_NORMAL);
 		if (size <= 0) {
+			if (this._debug)
+				error("Get version - timeout");
 			throw ErrIO;
 		}
 
-		return response.slice(0, size).toString();
+		if (this._debug)
+			info("Getting version, %d bytes read", size);
+
+		let end;
+		for (end = 0; end < size; ++end) {
+			const ch = response[end];
+			if (ch < 0x20 || ch > 0x7E) {
+				break;
+			}
+		}
+
+		return response.slice(0, end).toString();
 	}
 
 	//

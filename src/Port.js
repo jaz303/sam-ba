@@ -94,8 +94,4 @@ class ReadRequest {
 		this.onComplete = onComplete;
 		this.received = 0;
 	}
-
-	push(buffer) {
-
-	}
 }

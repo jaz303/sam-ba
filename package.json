@@ -12,7 +12,6 @@
     "serialport": "^9.0.0"
   },
   "dependencies": {
-    "crc": "^3.8.0",
     "printf": "^0.5.3"
   }
 }

@@ -5,13 +5,11 @@ const {Port} = require('./src/Port');
 const {Client} = require('./src/Client');
 
 const port = new Port(new SerialPort("/dev/cu.usbserial-FT4MFJFF1", {baudRate: 115200}), false);
-const client = new Client(port);
+const client = new Client(port, true);
 
 (async () => {
-	port.write('#');
 	try {
-		const version = await client.version();
-		console.log("Version:", version.trim());
+		await client.init();
 	} catch (err) {
 		console.error(err);
 	}
