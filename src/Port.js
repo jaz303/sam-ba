@@ -75,9 +75,11 @@ exports.Port = class Port {
 
     _setTimeout() {
         clearTimeout(this._timeout);
-        this._timeout = setTimeout(() => {
-            this._dispatchReadComplete();
-        }, this._activeRead.timeout);
+        if (this._activeRead.timeout > 0) {
+            this._timeout = setTimeout(() => {
+                this._dispatchReadComplete();
+            }, this._activeRead.timeout);    
+        }
     }
 
     _dispatchReadComplete() {

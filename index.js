@@ -1,5 +1,4 @@
 const SerialPort = require('serialport');
-const devices = require('./devices');
 
 const {Port} = require('./src/Port');
 const {Client} = require('./src/Client');
@@ -10,6 +9,10 @@ const client = new Client(port, true);
 (async () => {
     try {
         await client.init();
+		const device = await client.device();
+        
+        // console.log(device);
+
     } catch (err) {
         console.error(err);
     }

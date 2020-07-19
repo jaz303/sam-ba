@@ -1,5 +1,6 @@
 const {crc16} = require('./crc');
 const {bprintf} = require('./bprintf');
+const {getDevice} = require('./device');
 
 const BLK_SIZE          = 128;
 const MAX_RETRIES       = 5;
@@ -18,9 +19,7 @@ const ErrIO = Symbol('io-error');
 const ErrUnsupported = Symbol('unsupported');
 const ErrNotImplemented = Symbol('not-implemented');
 
-function info(msg, ...args)     { console.log("[I:sam-ba] " + msg, ...args); }
-function warn(msg, ...args)     { console.warn("[W:sam-ba] " + msg, ...args); }
-function error(msg, ...args)    { console.error("[E:sam-ba] " + msg, ...args); }
+const {info, warn, error} = require('./debug');
 
 exports.Client = class Client {
     constructor(port, debug = false) {
@@ -41,16 +40,15 @@ exports.Client = class Client {
         if (this._debug)
             info("Initialising...");
 
+        this._port.timeout(TIMEOUT_QUICK);
+
         // Flush garbage
         await this._port.read(Buffer.alloc(1024));
 
         // Have skipped BOSSA's auto-baud stuff
         // (this library expects to receive a preconigured port)
-        
         this._port.put('#'.charCodeAt(0));
         
-        this._port.timeout(TIMEOUT_QUICK);
-
         if (this._debug)
             info("Setting binary mode");
         
@@ -67,6 +65,10 @@ exports.Client = class Client {
         this._port.timeout(TIMEOUT_NORMAL);
 
         return ver;
+    }
+
+    device() {
+        return getDevice(this, this._debug);
     }
 
     async writeByte(addr, val) {
