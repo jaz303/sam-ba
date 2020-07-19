@@ -8,9 +8,9 @@ const port = new Port(new SerialPort("/dev/cu.usbserial-FT4MFJFF1", {baudRate: 1
 const client = new Client(port, true);
 
 (async () => {
-	try {
-		await client.init();
-	} catch (err) {
-		console.error(err);
-	}
+    try {
+        await client.init();
+    } catch (err) {
+        console.error(err);
+    }
 })();
