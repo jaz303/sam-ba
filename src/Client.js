@@ -1,4 +1,4 @@
-// const crc = require('crc/crc16');
+const {crc16} = require('./crc');
 const {bprintf} = require('./bprintf');
 
 const BLK_SIZE    		= 128;
@@ -126,13 +126,14 @@ exports.Client = class Client {
 		await this._writeFully(Buffer.from('V#'));
 
 		this._port.timeout(TIMEOUT_QUICK);
-		size = await this._port.read(cmd);
+		const response = Buffer.alloc(256);
+		const size = await this._port.read(response);
 		this._port.timeout(TIMEOUT_NORMAL);
 		if (size <= 0) {
 			throw ErrIO;
 		}
 
-		return buffer.slice(0, size).toString();
+		return response.slice(0, size).toString();
 	}
 
 	//
@@ -293,11 +294,11 @@ exports.Client = class Client {
 	}
 
 	_crcCalc(block) {
-
+		block.writeUInt16BE(BLK_SIZE + 3, crc16(block.slice(3, 3 + BLK_SIZE)));
 	}
 
 	_crcCheck(block) {
-
+		return block.readUInt16BE(BLK_SIZE + 3) === crc16(block.slice(3, 3 + BLK_SIZE));
 	}
 
 	_checkCap(cap) {
