@@ -1,5 +1,7 @@
-exports.D2xNvmFlash = (client, {pageCount, pageSize, user, stack}) => {
-    return ["FLASH"];
+const {D2xNVMFlash} = require('./D2xNVMFlash');
+
+exports.D2xNvmFlash = (client, opts) => {
+    return new D2xNVMFlash(client, opts);
 }
 
 exports.C2xNvmFlash = exports.D2xNvmFlash;
