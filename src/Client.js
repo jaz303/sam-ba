@@ -9,7 +9,7 @@ const EOT               = 0x04;
 const ACK               = 0x06;
 const NAK               = 0x15;
 const CAN               = 0x18;
-const START             = 'C';
+const START             = 'C'.charCodeAt(0);
 
 const TIMEOUT_QUICK     = 100;
 const TIMEOUT_NORMAL    = 1000;
