@@ -38,5 +38,5 @@ exports.crc16 = function(buffer) {
     for (let i = 0; i < buffer.length; ++i) {
         crc16 = (crc16 << 8) ^ crc16Table[((crc16 >> 8) ^ buffer[i]) & 0xFF];
     }
-    return crc16;
+    return crc16 & 0xFFFF;
 }
