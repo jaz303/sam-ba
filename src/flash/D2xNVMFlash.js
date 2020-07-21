@@ -41,42 +41,106 @@ const NVM_UR_NVM_LOCK_OFFSET      	= 0x6;
 const ErrFlashCmd = Symbol('err-flash-cmd');
 const ErrFlashPage = Symbol('err-flash-page');
 
-exports.D2xNVMFlash = class D2xNVMFlash {
+exports.D2xNVMFlash = class D2xNVMFlash extends BaseFlash {
 	constructor(client, {pageCount, pageSize, user, stack}) {
-		this._client = client;
-
-		this.address = 0;
-		this.pageCount = pageCount;
-		this.pageSize = pageSize;
-		this.planeCount = 1;
-		this.lockRegions = 16;
-		
+		super(client, {
+			address: 0,
+			pageCount: pageCount,
+			pageSize: pageSize,
+			planeCount: 1,
+			lockRegionCount: 16,
+			user: user,
+			stack: stack
+		});
+		this._eraseAuto = true;
 	}
 
-	get totalSize() { return this.pageSize * this.pageCount; }
-
-	// address
-	// pageSize
-	// pageCount
-	// planeCount
-	// totalSize
-	// lockRegions
+	//
+	// Overrides
 
 	eraseAll(offset) {
+		if (this._client.canChipErase()) {
+			return this._client.chipErase(offset);
+		} else {
+			return this._erase(offset, this.totalSize - offset);
+		}
+	}
+
+	eraseAuto(enable) {
+		this._eraseAuto = !!enable;
+	}
+
+	readLockRegions() {
+		let lockBits = 0;
+		let addr = NVM_UR_ADDR + NVM_UR_NVM_LOCK_OFFSET;
+		const out = new Array(this.lockRegionCount);
+		for (let r = 0; r < this.lockRegionCount; ++r) {
+			if (r % 8 === 0) {
+				lockBits = await this._client.readByte(addr++);
+			}
+			out[r] = (lockBits & (1 << (r % 8))) === 0;
+		}
+		return out;
+	}
+
+	async readSecurity() {
+		return ((await this._readReg(NVM_REG_STATUS)) & 0x100) !== 0;
+	}
+
+	isBODSupported() { return true; }
+
+	async readBOD() {
+		const b = await this._client.readByte(NVM_UR_ADDR + NVM_UR_BOD33_ENABLE_OFFSET);
+		return (b & NVM_UR_BOD33_ENABLE_MASK) != 0;
+	}
+
+	isBORSupported() { return true; }
+
+	async readBOR() {
+		const b = await this._client.readByte(NVM_UR_ADDR + NVM_UR_BOD33_RESET_OFFSET);
+		return (b & NVM_UR_BOD33_RESET_MASK) != 0;
+	}
+
+	readBootFlash() {
+		return true;
+	}
+
+	writeOptions() {
 
 	}
 
 	async writePage(page) {
+		this._checkPageNumber(page);
 
+		// Disable cache and configure manual page write
+		const rv = await this._readReg(NVM_REG_CTRLB);
+    	await this._writeReg(NVM_REG_CTRLB, rv | (0x1 << 18) | (0x1 << 7));
+
+    	// Auto-erase if writing at the start of the erase page
+    	if (this._eraseAuto && (page % ERASE_ROW_PAGES) == 0) {
+    		await this._erase(page * this.pageSize, ERASE_ROW_PAGES * this.pageSize);
+    	}
+
+    	// Clear page buffer
+    	await this._command(NVM_CMD_PBC);
+
+    	// Compute the start address.
+    	const addr = this.address + (page * this.pageSize);
+
+		await this._wordCopy.setDestinationAddress(addr);
+	    await this._wordCopy.setSourceAddress(this._onBufferA ? this._pageBufferA : this._pageBufferB);
+	    this._onBufferA = !this._onBufferA;
+	    await this._waitReady();
+	    await this._wordCopy.runv();
+
+	    await this._writeReg(NVM_REG_ADDR, addr / 2);
+	    await this._command(NVM_CMD_WP);
 	}
 
-	async readPage(page, buffer) {
-		if (page >= this.pageCount) {
-			throw ErrFlashPage;
-		}
-		if (buffer.length !== this.pageSize) {
-
-		}
+	readPage(page, buffer) {
+		this._checkPageNumber(page);
+		this._checkPageBufferSize(buffer);
+		return this._client.read(this.address + (page * this.pageSize), buffer);
 	}
 
 	//
@@ -106,11 +170,33 @@ exports.D2xNVMFlash = class D2xNVMFlash {
 	}
 
 	async _erase(offset, size) {
-		// const eraseSize = 
+		const eraseSize = this.pageSize * ERASE_ROW_PAGES;
+
+		if ((offset % eraseSize) != 0) {
+			throw new Error("Erase offset not boundary-aligned");
+		}
+
+		if ((offset + size) > this.totalSize) {
+			throw new Error("Erase size out of bounds");
+		}
+
+		const eraseEnd = Math.floor((offset + size + eraseSize - 1) / eraseSize);
+
+		for (let eraseNum = offset / eraseSize; eraseNum < eraseEnd; ++eraseNum) {
+			await this._waitReady();
+
+			// Clear error bits
+	        const statusReg = await this._readReg(NVM_REG_STATUS);
+	        await this._writeReg(NVM_REG_STATUS, statusReg | NVM_CTRL_STATUS_MASK);
+
+	        // Issue erase command
+	        const wordAddr = Math.floor((eraseNum * eraseSize) / 2);
+	        await this._writeReg(NVM_REG_ADDR, wordAddr);
+	        await this._command(NVM_CMD_ER);
+		}
 	}
 
 	async _readUserRow(wtf) {
 
 	}
-
 }

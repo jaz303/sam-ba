@@ -2,6 +2,8 @@ const {crc16} = require('./crc');
 const {bprintf} = require('./bprintf');
 const {getDevice} = require('./device');
 
+const printf = require('printf');
+
 const BLK_SIZE          = 128;
 const MAX_RETRIES       = 5;
 const SOH               = 0x01;
@@ -35,6 +37,10 @@ exports.Client = class Client {
         this._readBufferSize = 0;
         this._debug = debug;
     }
+
+    canChipErase() { return this._caps.chipErase; }
+    canWriteBufer() { return this._caps.writeBuffer; }
+    canChecksumBuffer() { return this._caps.checksumBuffer; }
 
     async init() {
         if (this._debug)
@@ -108,6 +114,9 @@ exports.Client = class Client {
     }
 
     async read(addr, buffer) {
+        if (this._debug)
+            info("Reading %d bytes from %s...", buffer.length, printf("0x%08X", addr));
+
         if (this._isUSB
             && this._readBufferSize == 0
             && buffer.length > 32
@@ -116,6 +125,7 @@ exports.Client = class Client {
             addr++;
             buffer = buffer.slice(1);
         }
+        
         while (buffer.length > 0) {
             let chunk;
             if (this._readBufferSize > 0 && buffer.length > this._readBufferSize) {

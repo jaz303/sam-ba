@@ -1,7 +1,8 @@
-const {D2xNVMFlash} = require('./D2xNVMFlash');
+// const {D2xNVMFlash} = require('./D2xNVMFlash');
 
 exports.D2xNvmFlash = (client, opts) => {
-    return new D2xNVMFlash(client, opts);
+	return ["FLASH"];
+    // return new D2xNVMFlash(client, opts);
 }
 
 exports.C2xNvmFlash = exports.D2xNvmFlash;
