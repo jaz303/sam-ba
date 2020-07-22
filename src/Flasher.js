@@ -1,5 +1,8 @@
 const {EventEmitter} = require('events');
 
+function now() { return Date.now() / 1000; }
+function dur(s) { return now() - s; }
+
 exports.Flasher = class Flasher extends EventEmitter {
 	constructor(client, device) {
 		super();
@@ -63,35 +66,38 @@ exports.Flasher = class Flasher extends EventEmitter {
 			throw new Error(`Flash read end is out of bounds`);
 		}
 
-		const opID = this._generateOperationID();
+		const op = { operation: 'read', id: this._generateOperationID() }
 		const pagesToRead = Math.ceil(buffer.length / pageSize);
 		const pageOffset = flashOffset / pageSize;
+		const startTime = now();
 
 		this.emit('start', {
-			id: opID,
-			operation: 'read',
 			flashOffset: flashOffset,
 			length: buffer.length,
-			pageCount: pagesToRead
+			pageCount: pagesToRead,
+			...op
 		});
 
 		for (let pageNum = 0; pageNum < pagesToRead; ++pageNum) {
+			this.emit('progress', this._progressEvent(pagesToRead, pageNum, op));
+
 			const page = pageOffset + pageNum;
-			this.emit('progress', {
-				id: opID,
-				pageIndex: pageNum,
-				flashPage: page,
-				progress: (pageNum / pagesToRead)
-			});
+			const readStart = now();
+
+			this.emit('pageread:start', { flashPage: page, ...op });
 			await this._readPage(page, pageBuffer);
+			this.emit('pageread:end', { flashPage: page, duration: dur(readStart), ...op });
+			
 			const bytesToCopy = Math.min(buffer.length, pageBuffer.length);
 			pageBuffer.copy(buffer, 0, 0, bytesToCopy);
 			buffer = buffer.slice(bytesToCopy);
 		}
 
+		this.emit('progress', this._progressEvent(pagesToRead, pagesToRead, op));
+
 		this.emit('end', {
-			id: opID,
-			operation: 'read'
+			duration: dur(startTime),
+			...op
 		});
 	}
 
@@ -115,5 +121,14 @@ exports.Flasher = class Flasher extends EventEmitter {
 
 	_generateOperationID() {
 		return this._nextID;
+	}
+
+	_progressEvent(max, complete, op) {
+		return {
+			progress: complete / max,
+			stepCount: max,
+			stepsCompleted: complete,
+			...op
+		}
 	}
 }

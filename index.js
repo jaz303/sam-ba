@@ -32,6 +32,10 @@ const {Flasher} = require('./src/Flasher');
             console.log("progress: " + JSON.stringify(evt));
         });
 
+        flasher.on('pageread:end', (evt) => {
+            console.log("page read: " + JSON.stringify(evt));
+        });
+
         flasher.on('end', (evt) => {
             console.log("end: " + JSON.stringify(evt));
         })
