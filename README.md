@@ -4,7 +4,7 @@ Work-in-progress Node.js port of ShumaTech's [BOSSA](https://github.com/shumatec
 
 ## Current Status
 
-Serial comms working. Version and device ID can be read.
+Serial comms working. Version and device ID can be read. Support for reading/parsing user row. Flash dumping works.
 
 ## Device Support
 

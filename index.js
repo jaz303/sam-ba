@@ -9,25 +9,55 @@ const client = new Client(port, true);
 const {C2xUserRow} = require('./src/flash/C2xD2x/C2xUserRow');
 const {FlashOptions} = require('./src/flash/FlashOptions');
 
+const {Flasher} = require('./src/Flasher');
+
 (async () => {
     try {
         await client.init();
 		const device = await client.device();
 
-        const userRow = new C2xUserRow();
-        const userRowAddress = 0x804000;
-        const userRowBuffer = Buffer.alloc(userRow.size);
-        await client.read(userRowAddress, userRowBuffer);
-        userRow.reset(userRowBuffer);
+        // bodge
+        device.flash = {
+            pageSize: 4096,
+            pageCount: 64,
+            totalSize: 262144
+        };
 
-        const fo = new FlashOptions(16);
+        const flasher = new Flasher(client, device);
+        flasher.on('start', (evt) => {
+            console.log("start: " + JSON.stringify(evt));
+        });
 
-        userRow.setBOD(false);
-        userRow.setBOR(false);
+        flasher.on('progress', (evt) => {
+            console.log("progress: " + JSON.stringify(evt));
+        });
 
-        // userRow.update(fo);
+        flasher.on('end', (evt) => {
+            console.log("end: " + JSON.stringify(evt));
+        })
 
-        console.log(userRow.getAll());
+        const mem = Buffer.alloc(256 * 1024);
+        await flasher.read(0, mem);
+
+        require('fs').writeFileSync("dump.bin", mem);
+
+
+
+
+        // const userRow = new C2xUserRow();
+        // const userRowAddress = 0x804000;
+        // const userRowBuffer = Buffer.alloc(userRow.size);
+        // await client.read(userRowAddress, userRowBuffer);
+        // userRow.reset(userRowBuffer);
+
+        // const fo = new FlashOptions(16);
+
+        // userRow.setBOD(false);
+        // userRow.setBOR(false);
+
+        // // userRow.update(fo);
+
+        // console.log(userRow.getAll());
 
 
 
