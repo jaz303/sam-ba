@@ -11,17 +11,14 @@ const {FlashOptions} = require('./src/flash/FlashOptions');
 
 const {Flasher} = require('./src/Flasher');
 
+const delay = (ms) => new Promise((y,n) => setTimeout(y, ms));
+
 (async () => {
     try {
         await client.init();
 		const device = await client.device();
-
-        // bodge
-        device.flash = {
-            pageSize: 4096,
-            pageCount: 64,
-            totalSize: 262144
-        };
+        
+        await device.flash.init();
 
         const flasher = new Flasher(client, device);
         flasher.on('start', (evt) => {
@@ -38,12 +35,73 @@ const {Flasher} = require('./src/Flasher');
 
         flasher.on('end', (evt) => {
             console.log("end: " + JSON.stringify(evt));
-        })
+        });
 
-        const mem = Buffer.alloc(256 * 1024);
-        await flasher.read(0, mem);
+        const prog = require('fs').readFileSync('2.bin');
+        
+        let target = 8192 / 64;
+        let src = prog;
+        const pageBuffer = Buffer.alloc(64);
+        while (src.length) {
+            const bytesToCopy = Math.min(src.length, 64);
+            pageBuffer.fill(0);
+            src.copy(pageBuffer, 0, 0, bytesToCopy);
+            await device.flash.loadBuffer(pageBuffer);
+            await device.flash.writePage(target);
+            src = src.slice(bytesToCopy);
+            target++;
+        }
 
-        require('fs').writeFileSync("dump.bin", mem);
+        await device.reset();
+
+
+
+
+
+
+
+
+
+
+        // const pages = 32;
+        // const firstPage = 4096 - pages;
+        // const offset = 13;
+
+        // const pagesData = [];
+        // for (let i = 0; i < pages; ++i) {
+        //     const p = Buffer.alloc(64);
+        //     p.fill((offset + i) & 0xFF);
+        //     pagesData.push(p);
+        // }
+
+        // for (let i = 0; i < pagesData.length; ++i) {
+        //     const p = firstPage + i;
+        //     console.log("Loading page buffer %d", p);
+        //     await device.flash.loadBuffer(pagesData[i]);
+        //     console.log("writing page!");
+        //     await device.flash.writePage(p);
+        //     await delay(100);
+        // }
+
+        // const pageBuffer = Buffer.alloc(64);
+        // for (let i = 0; i < pagesData.length; ++i) {
+        //     const p = firstPage + i;
+        //     const expect = (offset + i) & 0xFF;
+        //     await device.flash.readPage(p, pageBuffer);
+        //     for (let j = 0; j < pageBuffer.length; ++j) {
+        //         if (pageBuffer[j] !== expect) {
+        //             console.log("Page %d check failed! (%d != %d)", p, pageBuffer[j], expect);
+        //             break;
+        //         }
+        //     }
+        // }
+
+
+
+        // const mem = Buffer.alloc(8 * 1024);
+        // await flasher.read(0, mem);
+
+        // require('fs').writeFileSync("dump.bin", mem);
 
 
 

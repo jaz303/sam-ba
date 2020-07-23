@@ -104,7 +104,9 @@ exports.Client = class Client {
     }
 
     async write(addr, buffer) {
-        await this._writeFully("S%08X,%08X#", addr, buffer.length);
+        console.log("writing %d bytes to %s", buffer.length, printf("0x%08X", addr));
+        await this._writeFully(bprintf("S%08X,%08X#", addr, buffer.length));
+        console.log("write command written");
         if (this._isUSB) {
             await this._port.flush();
             await this._writeBinary(buffer);
@@ -213,11 +215,14 @@ exports.Client = class Client {
         let retries;
 
         for (retries = 0; retries < MAX_RETRIES; ++retries) {
-            if ((await this._port.get()) == START) {
+            const b = await this._port.get();
+            if (b === START) {
                 break;
             }
         }
-        
+
+        console.log("xwrite ready");
+
         if (retries == MAX_RETRIES) {
             throw ErrIO;
         }
@@ -233,7 +238,7 @@ exports.Client = class Client {
 
             for (retries = 0; retries < MAX_RETRIES; ++retries) {
                 await this._writeFully(blk);
-                if ((await this._port.get()) == ACK) {
+                if ((await this._port.get()) === ACK) {
                     break;
                 }
             }
@@ -242,7 +247,7 @@ exports.Client = class Client {
                 throw ErrIO;
             }
             
-            buffer = buffer.slice(BLK_SIZE);
+            buffer = buffer.slice(bytesToCopy);
             blkNum++;
         }
 
@@ -252,6 +257,8 @@ exports.Client = class Client {
                 break;
             }
         }
+
+        console.log("xwrite done");
         
         if (retries == MAX_RETRIES) {
             throw ErrIO;
@@ -336,7 +343,7 @@ exports.Client = class Client {
     }
 
     _crcCalc(block) {
-        block.writeUInt16BE(BLK_SIZE + 3, crc16(block.slice(3, 3 + BLK_SIZE)));
+        block.writeUInt16BE(crc16(block.slice(3, 3 + BLK_SIZE)), BLK_SIZE + 3);
     }
 
     _crcCheck(block) {

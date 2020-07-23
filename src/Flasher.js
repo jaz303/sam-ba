@@ -85,7 +85,7 @@ exports.Flasher = class Flasher extends EventEmitter {
 			const readStart = now();
 
 			this.emit('pageread:start', { flashPage: page, ...op });
-			await this._readPage(page, pageBuffer);
+			await this._flash.readPage(page, pageBuffer);
 			this.emit('pageread:end', { flashPage: page, duration: dur(readStart), ...op });
 			
 			const bytesToCopy = Math.min(buffer.length, pageBuffer.length);

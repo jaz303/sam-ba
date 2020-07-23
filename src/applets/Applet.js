@@ -1,3 +1,5 @@
+const printf = require('printf');
+
 exports.Applet = class Applet {
 	constructor(client, {addr, code, start, stack, reset}) {
 		this._client = client;
@@ -15,7 +17,7 @@ exports.Applet = class Applet {
 	// Address in device SRAM where will be placed the applet
 	get addr() { return this._addr; }
 
-	init() {
+	install() {
 		return this._client.write(this._addr, this._code);
 	}
 
@@ -31,10 +33,17 @@ exports.Applet = class Applet {
 
 	// To be used for Thumb-2 based devices (Cortex-Mx)
 	async runv() {
+
+		console.log("writing start address");
+
 		// Add one to the start address for Thumb mode
 		await this._client.writeWord(this._reset, this._start + 1);
+
+		console.log("start address written, go!");
 		
 		// The stack is the first reset vector
 		await this._client.go(this._stack);
+
+		console.log("go done");
 	}
 }

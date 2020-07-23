@@ -13,9 +13,15 @@ exports.WordCopyApplet = class WordCopyApplet extends Applet {
 		});
 	}
 
-	async configure(destinationAddress, sourceAddress, wordCount) {
-		await this._client.writeWord(this.addr + impl.dst_addr, destinationAddress);
-		await this._client.writeWord(this.addr + impl.src_addr, sourceAddress);
-		await this._client.writeWord(this.addr + impl.words, wordCount);
+	setWordCount(wordCount) {
+		return this._client.writeWord(this.addr + impl.words, wordCount); 
+	}
+
+	setDestinationAddress(destinationAddress) {
+		return this._client.writeWord(this.addr + impl.dst_addr, destinationAddress);
+	}
+
+	setSourceAddress(sourceAddress) {
+		return this._client.writeWord(this.addr + impl.src_addr, sourceAddress);
 	}
 }

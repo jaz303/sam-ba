@@ -1,4 +1,4 @@
-const {BaseFlash} = require('./BaseFlash');
+const {BaseFlash} = require('../BaseFlash');
 
 // CMDEX field should be 0xA5 to allow execution of any command.
 const CMDEX_KEY              		= 0xa500;
@@ -29,19 +29,12 @@ const NVM_CMD_PBC     				= 0x44;
 
 const ERASE_ROW_PAGES 				= 4; // pages
 
-// NVM User Row
-const NVM_UR_ADDR                 	= 0x804000;
-const NVM_UR_SIZE                 	= (_size * ERASE_ROW_PAGES);
-const NVM_UR_BOD33_ENABLE_OFFSET  	= 0x1;
-const NVM_UR_BOD33_ENABLE_MASK    	= 0x6;
-const NVM_UR_BOD33_RESET_OFFSET   	= 0x1;
-const NVM_UR_BOD33_RESET_MASK     	= 0x7;
-const NVM_UR_NVM_LOCK_OFFSET      	= 0x6;
-
 const ErrFlashCmd = Symbol('err-flash-cmd');
 const ErrFlashPage = Symbol('err-flash-page');
 
-exports.D2xNVMFlash = class D2xNVMFlash extends BaseFlash {
+const delay = (ms) => new Promise((y,n) => setTimeout(y, ms));
+
+exports.NVMFlash = class NVMFlash extends BaseFlash {
 	constructor(client, {pageCount, pageSize, user, stack}) {
 		super(client, {
 			address: 0,
@@ -70,45 +63,6 @@ exports.D2xNVMFlash = class D2xNVMFlash extends BaseFlash {
 		this._eraseAuto = !!enable;
 	}
 
-	readLockRegions() {
-		let lockBits = 0;
-		let addr = NVM_UR_ADDR + NVM_UR_NVM_LOCK_OFFSET;
-		const out = new Array(this.lockRegionCount);
-		for (let r = 0; r < this.lockRegionCount; ++r) {
-			if (r % 8 === 0) {
-				lockBits = await this._client.readByte(addr++);
-			}
-			out[r] = (lockBits & (1 << (r % 8))) === 0;
-		}
-		return out;
-	}
-
-	async readSecurity() {
-		return ((await this._readReg(NVM_REG_STATUS)) & 0x100) !== 0;
-	}
-
-	isBODSupported() { return true; }
-
-	async readBOD() {
-		const b = await this._client.readByte(NVM_UR_ADDR + NVM_UR_BOD33_ENABLE_OFFSET);
-		return (b & NVM_UR_BOD33_ENABLE_MASK) != 0;
-	}
-
-	isBORSupported() { return true; }
-
-	async readBOR() {
-		const b = await this._client.readByte(NVM_UR_ADDR + NVM_UR_BOD33_RESET_OFFSET);
-		return (b & NVM_UR_BOD33_RESET_MASK) != 0;
-	}
-
-	readBootFlash() {
-		return true;
-	}
-
-	writeOptions() {
-
-	}
-
 	async writePage(page) {
 		this._checkPageNumber(page);
 
@@ -116,25 +70,47 @@ exports.D2xNVMFlash = class D2xNVMFlash extends BaseFlash {
 		const rv = await this._readReg(NVM_REG_CTRLB);
     	await this._writeReg(NVM_REG_CTRLB, rv | (0x1 << 18) | (0x1 << 7));
 
-    	// Auto-erase if writing at the start of the erase page
+    	console.log("cache disabled + configured");
+    	
+		// Auto-erase if writing at the start of the erase page
     	if (this._eraseAuto && (page % ERASE_ROW_PAGES) == 0) {
+    		console.log("erasing...");
     		await this._erase(page * this.pageSize, ERASE_ROW_PAGES * this.pageSize);
+    		console.log("erase complete");
     	}
 
     	// Clear page buffer
     	await this._command(NVM_CMD_PBC);
+
+    	console.log("PBC issued");
 
     	// Compute the start address.
     	const addr = this.address + (page * this.pageSize);
 
 		await this._wordCopy.setDestinationAddress(addr);
 	    await this._wordCopy.setSourceAddress(this._onBufferA ? this._pageBufferA : this._pageBufferB);
+
+	    console.log("word copy applet configured");
+
 	    this._onBufferA = !this._onBufferA;
+
+	    console.log("waiting for ready");
+
 	    await this._waitReady();
+
+	    console.log("ready, running applet...");
+
 	    await this._wordCopy.runv();
 
+	    console.log("applet run");
+
 	    await this._writeReg(NVM_REG_ADDR, addr / 2);
+
+	    console.log("nvm reg addr");
+
 	    await this._command(NVM_CMD_WP);
+
+	    console.log("done!");
 	}
 
 	readPage(page, buffer) {
@@ -159,9 +135,14 @@ exports.D2xNVMFlash = class D2xNVMFlash extends BaseFlash {
 	}
 
 	async _command(cmd) {
+		console.log("cmd wait ready");
 		await this._waitReady();
+		console.log("cmd write reg");
 		await this._writeReg(NVM_REG_CTRLA, CMDEX_KEY | cmd);
+		console.log("cmd wait ready 2");
+		await delay(15);
 		await this._waitReady();
+		console.log("cmd read reg");
 		if ((await this._readReg(NVM_REG_INTFLAG)) & 0x2) {
 			// Clear the error bit
 			await this._writeReg(NVM_REG_INTFLAG, 0x2);
