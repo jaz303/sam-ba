@@ -84,9 +84,6 @@ exports.Flasher = class Flasher {
 			page++;
 			data = data.slice(bytesToCopy);
 		}
-
-		if (debug.enabled)
-			debug.info("Standard write complete");
 	}
 
 	async _getFlash() {

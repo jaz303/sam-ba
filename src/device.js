@@ -3,6 +3,7 @@ const { info, warn, error } = require('./debug');
 const createFlash = require('./flash');
 
 const printf = require('printf');
+const debug = require('./debug');
 
 class Device {
     constructor(client, family, name, flash) {
@@ -19,7 +20,7 @@ class Device {
     }
 }
 
-exports.getDevice = async function(client, debug) {
+exports.getDevice = async function(client) {
     let chipID = 0, cpuID = 0, extChipID = 0, deviceID = 0;
 
     // All devices support addresss 0 as the ARM reset vector so if the vector is
@@ -57,8 +58,8 @@ exports.getDevice = async function(client, debug) {
 
     }
 
-    if (debug)
-        info("Read ID: chip=0x%s cpu=0x%s device=0x%s",
+    if (debug.enabled)
+        debug.info("Read ID: chip=0x%s cpu=0x%s device=0x%s",
             printf("%08X", chipID),
             printf("%08X", cpuID),
             printf("%08X", deviceID)
@@ -78,9 +79,9 @@ exports.getDevice = async function(client, debug) {
 
     const [family, deviceName, flashType, flashArgs] = spec;
 
-    if (debug) {
-        info("Family: %s", family);
-        info("Device: %s", deviceName);
+    if (debug.enabled) {
+        debug.info("Family: %s", family);
+        debug.info("Device: %s", deviceName);
     }
 
     return new Device(

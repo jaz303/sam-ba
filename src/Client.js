@@ -21,10 +21,10 @@ const ErrIO = Symbol('io-error');
 const ErrUnsupported = Symbol('unsupported');
 const ErrNotImplemented = Symbol('not-implemented');
 
-const {info, warn, error} = require('./debug');
+const debug = require('./debug');
 
 exports.Client = class Client {
-    constructor(port, debug = false) {
+    constructor(port) {
         this.version = null;
         this.device = null;
 
@@ -38,7 +38,6 @@ exports.Client = class Client {
         };
 
         this._readBufferSize = 0;
-        this._debug = debug;
     }
 
     canChipErase() { return this._caps.chipErase; }
@@ -46,8 +45,8 @@ exports.Client = class Client {
     canChecksumBuffer() { return this._caps.checksumBuffer; }
 
     async init() {
-        if (this._debug)
-            info("Initialising...");
+        if (debug.enabled)
+            debug.info("Initialising...");
 
         this._port.timeout(TIMEOUT_QUICK);
 
@@ -58,22 +57,22 @@ exports.Client = class Client {
         // (this library expects to receive a preconigured port)
         this._port.put('#'.charCodeAt(0));
         
-        if (this._debug)
-            info("Setting binary mode");
+        if (debug.enabled)
+            debug.info("Setting binary mode");
         
         const bSetBinMode = Buffer.from('N#');
         await this._port.write(bSetBinMode);
         await this._port.read(bSetBinMode);
 
         this.version = await this._readVersion();
-        if (this._debug)
-            info("Version: %s", this.version);
+        if (debug.enabled)
+            debug.info("Version: %s", this.version);
 
         // Skipping the Arduino stuff for now
 
         this._port.timeout(TIMEOUT_NORMAL);
 
-        this.device = await getDevice(this, this._debug);
+        this.device = await getDevice(this);
 
         return this.version;
     }
@@ -115,8 +114,8 @@ exports.Client = class Client {
     }
 
     async read(addr, buffer) {
-        if (this._debug)
-            info("Reading %d bytes from %s...", buffer.length, printf("0x%08X", addr));
+        if (debug.enabled)
+            debug.info("Reading %d bytes from %s...", buffer.length, printf("0x%08X", addr));
 
         if (this._isUSB
             && this._readBufferSize == 0
@@ -332,13 +331,13 @@ exports.Client = class Client {
         const size = await this._port.read(response);
         this._port.timeout(TIMEOUT_NORMAL);
         if (size <= 0) {
-            if (this._debug)
-                error("Get version - timeout");
+            if (debug.enabled)
+                debug.error("Get version - timeout");
             throw ErrIO;
         }
 
-        if (this._debug)
-            info("Getting version, %d bytes read", size);
+        if (debug.enabled)
+            debug.info("Getting version, %d bytes read", size);
 
         let end;
         for (end = 0; end < size; ++end) {
