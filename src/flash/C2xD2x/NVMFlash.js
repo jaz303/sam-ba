@@ -31,7 +31,6 @@ const NVM_CMD_PBC     				= 0x44;
 const ERASE_ROW_PAGES 				= 4; // pages
 
 const ErrFlashCmd = Symbol('err-flash-cmd');
-const ErrFlashPage = Symbol('err-flash-page');
 
 const delay = (ms) => new Promise((y,n) => setTimeout(y, ms));
 
