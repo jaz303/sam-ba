@@ -4,8 +4,18 @@ Work-in-progress Node.js port of ShumaTech's [BOSSA](https://github.com/shumatec
 
 ## Current Status
 
-Serial comms working. Version and device ID can be read. Support for reading/parsing user row. Flash dumping works.
+  - Ability to read device ID
+  - Mostly-working CLI for flash reading/writing (some bugs)
+  - Support for reading device settings from user row
 
 ## Device Support
 
+### ATSAMC2x
+
+Should work. Tested devices:
+
   - `ATSAMC20J18A` - in-development
+
+### ATSAMD2x
+
+Should work.
