@@ -1,16 +1,16 @@
 class Device {
-	constructor(client, name, flash, settings) {
-		this.family = familyName(name);
-		this.name = name;
-		this.flash = flash;
-		this.settings = settings;
+    constructor(client, name, flash, settings) {
+        this.family = familyName(name);
+        this.name = name;
+        this.flash = flash;
+        this.settings = settings;
 
-		this._client = client;
-	}
+        this._client = client;
+    }
 
-	reset() {
-		throw new Error("reset() is not implemented");
-	}
+    reset() {
+        throw new Error("reset() is not implemented");
+    }
 }
 
 const RESETS = [
@@ -28,42 +28,42 @@ const {C2xUserRow} = require('../settings/C2xUserRow');
 const {D2xUserRow} = require('../settings/D2xUserRow');
 
 class SAMC2xD2x extends Device {
-	constructor(client, name, flashParams, settingsDef) {
-		const flash = new C2xD2xNVMFlash(client, flashParams);
-		const settings = new FlashUserRowSettings(client, flash, settingsDef);
-		super(client, name, flash, settings);
-	}
+    constructor(client, name, flashParams, settingsDef) {
+        const flash = new C2xD2xNVMFlash(client, flashParams);
+        const settings = new FlashUserRowSettings(client, flash, settingsDef);
+        super(client, name, flash, settings);
+    }
 
-	reset() {
-		return RESETS[0](this._client);
-	}
+    reset() {
+        return RESETS[0](this._client);
+    }
 }
 
 exports.SAMC2x = class SAMC2x extends SAMC2xD2x {
-	constructor(client, name, flashParams) {
-		super(
-			client,
-			name,
-			flashParams,
-			new C2xUserRow()
-		);
-	}
+    constructor(client, name, flashParams) {
+        super(
+            client,
+            name,
+            flashParams,
+            new C2xUserRow()
+        );
+    }
 }
 
 exports.SAMD2x = class SAMD2x extends SAMC2xD2x {
-	constructor(client, name, flashParams) {
-		super(
-			client,
-			name,
-			flashParams,
-			new D2xUserRow()
-		);
-	}
+    constructor(client, name, flashParams) {
+        super(
+            client,
+            name,
+            flashParams,
+            new D2xUserRow()
+        );
+    }
 }
 
 function familyName(part) {
-	if (part.match(/^AT(SAM[CD]2[01])/))
-		return RegExp.$1;
+    if (part.match(/^AT(SAM[CD]2[01])/))
+        return RegExp.$1;
 
-	throw new Error(`Unknown family for part ${part}`);
+    throw new Error(`Unknown family for part ${part}`);
 }
