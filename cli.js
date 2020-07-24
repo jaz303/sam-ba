@@ -16,9 +16,16 @@ exports.info = async (options) => {
 	const device = client.device;
 
 	const entries = [
-		['SAM-BA version',	'samBAVersion',	client.version],
-		['Device', 			'device', 		device.name],
-		['Family', 			'family', 		device.family]
+		['SAM-BA version',		'samBAVersion',		client.version],
+		['Device', 				'device', 			device.name],
+		['Family', 				'family', 			device.family],
+		['Flash address',		'flashAddress',		printf("0x%08X", device.flash.address)],
+		['Flash size',			'flashSize',		printf("%dKiB", device.flash.totalSize / 1024)],
+		['Flash size (bytes)',	'flashSizeBytes',	device.flash.totalSize],
+		['Page size (bytes)',	'pageSizeBytes',	device.flash.pageSize],
+		['Page count',			'pageCount',		device.flash.pageCount],
+		['Plane count',			'planeCount',		device.flash.planeCount],
+		['Lock region count',	'lockRegionCount',	device.flash.lockRegionCount]
 	];
 
 	print(entries, options);
