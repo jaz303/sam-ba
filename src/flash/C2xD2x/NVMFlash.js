@@ -1,4 +1,5 @@
 const {BaseFlash} = require('../BaseFlash');
+const debug = require('../../debug');
 
 // CMDEX field should be 0xA5 to allow execution of any command.
 const CMDEX_KEY              		= 0xa500;
@@ -33,6 +34,8 @@ const ErrFlashCmd = Symbol('err-flash-cmd');
 const ErrFlashPage = Symbol('err-flash-page');
 
 const delay = (ms) => new Promise((y,n) => setTimeout(y, ms));
+
+const console = { log() {}, warn() {}, error() {} };
 
 exports.NVMFlash = class NVMFlash extends BaseFlash {
 	constructor(client, {pageCount, pageSize, user, stack}) {
@@ -175,9 +178,5 @@ exports.NVMFlash = class NVMFlash extends BaseFlash {
 	        await this._writeReg(NVM_REG_ADDR, wordAddr);
 	        await this._command(NVM_CMD_ER);
 		}
-	}
-
-	async _readUserRow(wtf) {
-
 	}
 }

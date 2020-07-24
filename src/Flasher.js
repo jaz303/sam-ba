@@ -1,134 +1,96 @@
-const {EventEmitter} = require('events');
+const debug = require('./debug');
+const printf = require('printf');
 
-function now() { return Date.now() / 1000; }
-function dur(s) { return now() - s; }
-
-exports.Flasher = class Flasher extends EventEmitter {
+exports.Flasher = class Flasher {
 	constructor(client, device) {
-		super();
 		this._client = client;
 		this._device = device;
 		this._flash = device.flash;
-		this._nextID = 1;
 	}
 
-	async erase(foffset) {
-		this.emit('erase');
-		await this._flash.eraseAll(foffset);
-		this._flash.eraseAuto(false);
-	}
+	async write(offset, data) {
+		const F = await this._getFlash();
 
-	async write(foffset, data) {
-		const pageSize = this._flash.pageSize;
-		
-		const numPages = Math.ceil(data.length / pageSize);
-		if (numPages > this._flash.pageCount) {
-			throw new Error("Data too long");
+		let page = F.pageForAddress(offset);
+
+		const end = offset + data.length;
+		if (end > F.totalSize) {
+			throw new Error(printf("End address 0x%08X is out of bounds", end));
 		}
 
-		if (this._client.canWriteBuffer()) {
-			// let offset = 0;
-			// const bufferSize = this._client.writeBufferSize;
+		if (debug.enabled)
+			debug.info("Write %d bytes (%d pages) starting at page %d", data.length, Math.ceil(data.length / F.pageSize), page);
 
-			// for (let i = 0; i < data.length; i += bufferSize) {
-
-			// }
+		if (this._client.canWriteBufer()) {
+			await this._writeViaBuffer(F, page, data);
 		} else {
-			let page = foffset / pageSize;
-			// TODO: check page is integer
-			for (let i = 0; i < data.length; i += pageSize, page++) {
-				// TODO: emit progress
-				await this._flash.loadBuffer(data.slice(i, i + pageSize));
-				// TODO: emit progress
-				await this._flash.writePage(page);
-				// TODO: emit progress
+			await this._writeStandard(F, page, data);
+		}
+	}
+
+	async readToBuffer(offset, dst) {
+		const F = await this._getFlash();
+
+		let page = F.pageForAddress(offset);
+
+		if (!dst) {
+			dst = Buffer.alloc(F.totalSize - offset);
+		} else {
+			const end = offset + dst.length;
+			if (end > F.totalSize) {
+				throw new Error(printf("End address 0x%08X is out of bounds", end));
 			}
 		}
-	}
 
-	verify(flashOffset, data) {
+		if (debug.enabled)
+			debug.info("Reading %d bytes (%d pages) starting from page %d", dst.length, Math.ceil(dst.length / F.pageSize), page);
 
-	}
+		const pageBuffer = Buffer.alloc(F.pageSize);
 
-	async read(flashOffset, buffer) {
-		const pageSize = this._flash.pageSize;
-		const pageBuffer = Buffer.alloc(pageSize);
+		let tmp = dst;
+		while (tmp.length) {
+			if (debug.enabled)
+				debug.info("Read page %d", page);
 
-		if (flashOffset < 0 || flashOffset >= this._flash.totalSize) {
-			throw new Error(`Flash read start is out of bounds`);
+			await F.readPage(page, pageBuffer);
+			const bytesToCopy = Math.min(F.pageSize, tmp.length);
+			pageBuffer.copy(tmp, 0, 0, bytesToCopy);
+			page++;
+			tmp = tmp.slice(bytesToCopy);
 		}
 
-		if ((flashOffset % pageSize) !== 0) {
-			throw new Error(`Flash read offset ${flashOffset} is not page-aligned`);
-		}
+		if (debug.enabled)
+			debug.info("Read to buffer complete");
 
-		if ((flashOffset + buffer.length) > this._flash.totalSize) {
-			throw new Error(`Flash read end is out of bounds`);
-		}
-
-		const op = { operation: 'read', id: this._generateOperationID() }
-		const pagesToRead = Math.ceil(buffer.length / pageSize);
-		const pageOffset = flashOffset / pageSize;
-		const startTime = now();
-
-		this.emit('start', {
-			flashOffset: flashOffset,
-			length: buffer.length,
-			pageCount: pagesToRead,
-			...op
-		});
-
-		for (let pageNum = 0; pageNum < pagesToRead; ++pageNum) {
-			this.emit('progress', this._progressEvent(pagesToRead, pageNum, op));
-
-			const page = pageOffset + pageNum;
-			const readStart = now();
-
-			this.emit('pageread:start', { flashPage: page, ...op });
-			await this._flash.readPage(page, pageBuffer);
-			this.emit('pageread:end', { flashPage: page, duration: dur(readStart), ...op });
-			
-			const bytesToCopy = Math.min(buffer.length, pageBuffer.length);
-			pageBuffer.copy(buffer, 0, 0, bytesToCopy);
-			buffer = buffer.slice(bytesToCopy);
-		}
-
-		this.emit('progress', this._progressEvent(pagesToRead, pagesToRead, op));
-
-		this.emit('end', {
-			duration: dur(startTime),
-			...op
-		});
+		return dst;
 	}
 
-	lock() {
-
+	async _writeViaBuffer() {
+		throw new Error("Not implemented");
 	}
 
-	info() {
+	async _writeStandard(F, page, data) {
+		const pageBuffer = Buffer.alloc(F.pageSize);
 
-	}
+		while (data.length) {
+			if (debug.enabled)
+				debug.info("Write page %d", page);
 
-	_readPage(page, buf) {
-		if (page < 0 || page >= this._flash.pageCount) {
-			throw new Error(`Invalid flash page (${page})`);
+			const bytesToCopy = Math.min(data.length, F.pageSize);
+			data.copy(pageBuffer, 0, 0, bytesToCopy);
+			pageBuffer.fill(0x00, bytesToCopy);
+			await F.loadBuffer(pageBuffer);
+			await F.writePage(page);
+			page++;
+			data = data.slice(bytesToCopy);
 		}
-		if (buf.length !== this._flash.pageSize) {
-			throw new Error(`Buffer size (${buf.length}) does not equal page size (${this._flash.pageSize})`);
-		}
-		return this._client.read(page * this._flash.pageSize, buf);
+
+		if (debug.enabled)
+			debug.info("Standard write complete");
 	}
 
-	_generateOperationID() {
-		return this._nextID;
-	}
-
-	_progressEvent(max, complete, op) {
-		return {
-			progress: complete / max,
-			stepCount: max,
-			stepsCompleted: complete,
-			...op
-		}
+	async _getFlash() {
+		await this._device.flash.init();
+		return this._device.flash;
 	}
 }

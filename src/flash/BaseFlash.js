@@ -1,4 +1,6 @@
 const {WordCopyApplet} = require('../applets/WordCopyApplet');
+const debug = require('../debug');
+const printf = require('printf');
 
 function align32(val) {
 	return (val + 3) & ~3;
@@ -21,14 +23,47 @@ exports.BaseFlash = class BaseFlash {
 		this._pageBufferA = align32(user + this._wordCopy.size);
 		this._pageBufferB = this._pageBufferA + this.pageSize;
 		this._onBufferA = true;
+
+		this._initialised = false;
 	}
 
 	get totalSize() { return this.pageCount * this.pageSize; }
 
+	//
+	// Offset calculations
+
+	pageForAddress(addr) {
+		const rel = addr - this.address;
+		if (rel < 0) {
+			throw new Error(printf("Invalid page address 0x%08X", addr));
+		}
+		if ((rel % this.pageSize) !== 0) {
+			throw new Error(printf("Address 0x%08X is not on a page boundary", addr));
+		}
+		const page = rel / this.pageSize;
+		this._checkPageNumber(page);
+		return page;
+	}
+
+	/**
+	 * Initialise the flash for access
+	 */
 	async init() {
-		await this._wordCopy.install();
-		await this._wordCopy.setWordCount(this.pageSize / 4);
-		await this._wordCopy.setStack(this._stack);
+		if (!this._initialised) {
+			if (debug.enabled)
+				debug.info("Initialising flash word copy applet...");
+
+			const wordCount = this.pageSize / 4;
+			
+			await this._wordCopy.install();
+			await this._wordCopy.setWordCount(wordCount);
+			await this._wordCopy.setStack(this._stack);	
+
+			if (debug.enabled)
+				debug.info(printf("Word copy installed (wordCount=%d, stack=0x%08X)", wordCount, this._stack));
+
+			this._initialised = true;
+		}
 	}
 
 	eraseAll(offset) { throw new Error("eraseAll() is not implemented"); }
@@ -48,7 +83,6 @@ exports.BaseFlash = class BaseFlash {
 	loadBuffer(data) {
 		this._checkPageBufferSize(data);
 		const target = this._onBufferA ? this._pageBufferA : this._pageBufferB;
-		console.log("loading buffer to " + target);
 		return this._client.write(target, data);
 	}
 

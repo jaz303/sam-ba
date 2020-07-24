@@ -25,6 +25,9 @@ const {info, warn, error} = require('./debug');
 
 exports.Client = class Client {
     constructor(port, debug = false) {
+        this.version = null;
+        this.device = null;
+
         this._port = port;
         this._isUSB = port.isUSB;
 
@@ -62,19 +65,17 @@ exports.Client = class Client {
         await this._port.write(bSetBinMode);
         await this._port.read(bSetBinMode);
 
-        const ver = await this.version();
+        this.version = await this._readVersion();
         if (this._debug)
-            info("Version: %s", ver);
+            info("Version: %s", this.version);
 
         // Skipping the Arduino stuff for now
 
         this._port.timeout(TIMEOUT_NORMAL);
 
-        return ver;
-    }
+        this.device = await getDevice(this, this._debug);
 
-    device() {
-        return getDevice(this, this._debug);
+        return this.version;
     }
 
     async writeByte(addr, val) {
@@ -104,9 +105,7 @@ exports.Client = class Client {
     }
 
     async write(addr, buffer) {
-        console.log("writing %d bytes to %s", buffer.length, printf("0x%08X", addr));
         await this._writeFully(bprintf("S%08X,%08X#", addr, buffer.length));
-        console.log("write command written");
         if (this._isUSB) {
             await this._port.flush();
             await this._writeBinary(buffer);
@@ -153,33 +152,6 @@ exports.Client = class Client {
         }
     }
 
-    async version() {
-        await this._writeFully(Buffer.from('V#'));
-
-        this._port.timeout(TIMEOUT_QUICK);
-        const response = Buffer.alloc(255);
-        const size = await this._port.read(response);
-        this._port.timeout(TIMEOUT_NORMAL);
-        if (size <= 0) {
-            if (this._debug)
-                error("Get version - timeout");
-            throw ErrIO;
-        }
-
-        if (this._debug)
-            info("Getting version, %d bytes read", size);
-
-        let end;
-        for (end = 0; end < size; ++end) {
-            const ch = response[end];
-            if (ch < 0x20 || ch > 0x7E) {
-                break;
-            }
-        }
-
-        return response.slice(0, end).toString();
-    }
-
     //
     // Extended operations
 
@@ -221,8 +193,6 @@ exports.Client = class Client {
             }
         }
 
-        console.log("xwrite ready");
-
         if (retries == MAX_RETRIES) {
             throw ErrIO;
         }
@@ -258,8 +228,6 @@ exports.Client = class Client {
             }
         }
 
-        console.log("xwrite done");
-        
         if (retries == MAX_RETRIES) {
             throw ErrIO;
         }
@@ -354,6 +322,33 @@ exports.Client = class Client {
         if (!this._caps[cap]) {
             throw ErrUnsupported;
         }
+    }
+
+    async _readVersion() {
+        await this._writeFully(Buffer.from('V#'));
+
+        this._port.timeout(TIMEOUT_QUICK);
+        const response = Buffer.alloc(255);
+        const size = await this._port.read(response);
+        this._port.timeout(TIMEOUT_NORMAL);
+        if (size <= 0) {
+            if (this._debug)
+                error("Get version - timeout");
+            throw ErrIO;
+        }
+
+        if (this._debug)
+            info("Getting version, %d bytes read", size);
+
+        let end;
+        for (end = 0; end < size; ++end) {
+            const ch = response[end];
+            if (ch < 0x20 || ch > 0x7E) {
+                break;
+            }
+        }
+
+        return response.slice(0, end).toString();
     }
 }
 
