@@ -1,24 +1,7 @@
-const { FAMILIES, DEVICES } = require('./devices');
-const { info, warn, error } = require('./debug');
-const createFlash = require('./flash');
-
-const printf = require('printf');
+const { DEVICES } = require('./devices/lookup');
 const debug = require('./debug');
 
-class Device {
-    constructor(client, family, name, flash) {
-        this.name = name;
-        this.family = family;
-        this.flash = flash;
-
-        this._client = client;
-        this._reset = FAMILIES[this.family].reset;
-    }
-
-    reset() {
-        return this._reset(this._client);
-    }
-}
+const printf = require('printf');
 
 exports.getDevice = async function(client) {
     let chipID = 0, cpuID = 0, extChipID = 0, deviceID = 0;
@@ -70,26 +53,21 @@ exports.getDevice = async function(client) {
     if (tmp) {
         // TODO: implement lookup by chip ID
     } else {
-        spec = DEVICES[printf("0x%08x", deviceID & 0xffff00ff)];
+        ctor = DEVICES[printf("0x%08x", deviceID & 0xffff00ff)];
     }
 
-    if (!spec) {
+    if (!ctor) {
         throw new Error("Unsupported device ID: " + deviceID);
     }
 
-    const [family, deviceName, flashType, flashArgs] = spec;
+    const device = ctor(client);
 
     if (debug.enabled) {
-        debug.info("Family: %s", family);
-        debug.info("Device: %s", deviceName);
+        debug.info("Family: %s", device.family);
+        debug.info("Device: %s", device.name);
     }
 
-    return new Device(
-        client,
-        family,
-        deviceName,
-        createFlash[flashType](client, flashArgs)
-    );
+    return device;
 }
 
 async function readChipID(client, chipID, extChipID) {

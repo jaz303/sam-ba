@@ -1,8 +1,10 @@
 const {UserRow} = require('./UserRow');
 
+const Address = 0x804000;
+
 exports.D2xUserRow = class D2xUserRow extends UserRow {
 	constructor() {
-		super(8, 16);
+		super(Address, 8, 16);
 		
 		this._add('BOOTPROT', 3);
 		this._skip(1);
@@ -20,7 +22,7 @@ exports.D2xUserRow = class D2xUserRow extends UserRow {
 		this._add('WDT_WEN', 1);
 		this._add('BOD33_HYSTERESIS', 1);
 		this._skip(7);
-		this._add('LOCK', 16, 0xFFFF);
+		this._add('LOCK', 16);
 		this._done();
 	}
 

@@ -1,5 +1,5 @@
-const {BaseFlash} = require('../BaseFlash');
-const debug = require('../../debug');
+const {BaseFlash} = require('./BaseFlash');
+const debug = require('../debug');
 
 // CMDEX field should be 0xA5 to allow execution of any command.
 const CMDEX_KEY              		= 0xa500;
@@ -36,7 +36,7 @@ const delay = (ms) => new Promise((y,n) => setTimeout(y, ms));
 
 const console = { log() {}, warn() {}, error() {} };
 
-exports.NVMFlash = class NVMFlash extends BaseFlash {
+exports.C2xD2xNVMFlash = class C2xD2xNVMFlash extends BaseFlash {
 	constructor(client, {pageCount, pageSize, user, stack}) {
 		super(client, {
 			address: 0,

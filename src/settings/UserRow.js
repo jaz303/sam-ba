@@ -1,5 +1,6 @@
 exports.UserRow = class UserRow {
-	constructor(size, lockRegionCount) {
+	constructor(address, size, lockRegionCount) {
+		this.address = address;
 		this.size = size;
 		this.lockRegionCount = lockRegionCount;
 
@@ -8,25 +9,17 @@ exports.UserRow = class UserRow {
 		}
 
 		this._settings = {};
-		this._rowData = Buffer.alloc(size);
 		this._pos = 0;
 	}
 
-	reset(newData) {
-		if (newData.length !== this.size) {
-			throw new Error(`Invalid user row length (expected=${this.size}, actual=${newData.size})`);
-		}
-		this._rowData = newData.slice(0, this.size);
-	}
-
-	get(key) {
+	get(buffer, key) {
 		let {offset, width} = this._checkSetting(key, false);
 
 		let value = 0;
 		for (let i = 0; i < width; ++i, ++offset) {
 			const by = offset >> 3;
 			const bi = offset & 7;
-			if (this._rowData[by] & (1 << bi)) {
+			if (buffer[by] & (1 << bi)) {
 				value |= (1 << i);
 			}
 		}
@@ -34,24 +27,24 @@ exports.UserRow = class UserRow {
 		return value;
 	}
 
-	getAll() {
+	getAll(buffer) {
 		const out = {};
 		for (let key in this._settings) {
-			out[key] = this.get(key);
+			out[key] = this.get(buffer, key);
 		}
 		return out;
 	}
 
-	set(key, value) {
+	set(buffer, key, value) {
 		let {offset, width, writable} = this._checkSetting(key, true);
 
 		for (let i = 0; i < width; ++i, ++offset) {
 			const by = offset >> 3;
 			const bi = offset & 7;
 			if (value & (1 << i)) {
-				this._rowData[by] |= (1 << bi);
+				buffer[by] |= (1 << bi);
 			} else {
-				this._rowData[by] &= ~(1 << bi);
+				buffer[by] &= ~(1 << bi);
 			}
 		}
 	}
@@ -77,8 +70,8 @@ exports.UserRow = class UserRow {
 	//
 	// Lock Regions
 
-	getLockedRegions() {
-		const mask = this.get('LOCK');
+	getLockedRegions(buffer) {
+		const mask = this.get(buffer, 'LOCK');
 		
 		const out = [];
 		for (let i = 0; i < this.lockRegionCount; ++i) {
@@ -88,7 +81,7 @@ exports.UserRow = class UserRow {
 		return out;
 	}
 
-	setLockedRegions(lockedRegions) {
+	setLockedRegions(buffer, lockedRegions) {
 		if (lockedRegions.length !== this.lockRegionCount) {
 			throw new Error("Lock region length mismatch");
 		}
@@ -100,16 +93,16 @@ exports.UserRow = class UserRow {
 			}
 		}
 
-		this.set('LOCK', mask);
+		this.set(buffer, 'LOCK', mask);
 	}
 
-	lockAllRegions() { this._setAllRegionsLocked(true); }
-	unlockAllRegions() { this._setAllRegionsLocked(false); }
+	lockAllRegions(buffer) { this._setAllRegionsLocked(buffer, true); }
+	unlockAllRegions(buffer) { this._setAllRegionsLocked(buffer, false); }
 
-	_setAllRegionsLocked(locked) {
+	_setAllRegionsLocked(buffer, locked) {
 		const rs = new Array(this.lockRegionCount);
 		rs.fill(!!locked);
-		this.setLockedRegions(rs);
+		this.setLockedRegions(buffer, rs);
 	}
 
 	//

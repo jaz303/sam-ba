@@ -27,7 +27,18 @@ exports.info = async (options) => {
 exports.settings = async (options) => {
 	const client = await open(options);
 
-	console.log("Device settings!");
+	const settings = client.device.settings;
+
+	await settings.init();
+	await settings.read();
+
+	const out = [];
+	const dict = settings.getAll();
+	for (let k in dict) {
+		out.push([k, k, dict[k]]);
+	}
+
+	print(out, options);
 }
 
 exports.reset = async (options) => {

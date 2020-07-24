@@ -1,8 +1,10 @@
 const {UserRow} = require('./UserRow');
 
+const Address = 0x804000;
+
 exports.C2xUserRow = class C2xUserRow extends UserRow {
 	constructor() {
-		super(8, 16);
+		super(Address, 8, 16);
 		
 		this._add('BOOTPROT', 3);
 		this._skip(1);
