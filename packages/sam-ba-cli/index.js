@@ -58,6 +58,10 @@ exports.read = async (options) => {
     const client = await open(options);
     const flasher = new Flasher(client, client.device);
 
+    if (options.args.length !== 1) {
+        throw new UsageError("read <file>");
+    }
+
     let address = options.address;
     if (address === null) {
         address = 0;
@@ -70,9 +74,7 @@ exports.read = async (options) => {
 
     const outputBuffer = await flasher.readToBuffer(address, targetBuffer);
 
-    console.log(outputBuffer.length);
-    console.log(outputBuffer);
-    
+    require('fs').writeFileSync(options.args[0], outputBuffer);
 }
 
 exports.write = async (options) => {
