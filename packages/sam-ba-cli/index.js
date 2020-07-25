@@ -105,6 +105,18 @@ exports.write = async (options) => {
 
     const data = require('fs').readFileSync(options.args[0]);
 
+    flasher.on('start', (evt) => {
+        console.log("Writing %d bytes (%d pages) to %s",
+            evt.length,
+            evt.pageCount,
+            printf("0x%08X", evt.address)
+        );
+    });
+
+    flasher.on('pagewrite:start', ({page}) => {
+        console.log("Writing page %d...", page);
+    });
+
     await flasher.write(address, data);
 
     if (debug.enabled)

@@ -29,14 +29,30 @@ exports.Flasher = class Flasher extends EventEmitter {
             throw new Error(printf("End address 0x%08X is out of bounds", end));
         }
 
+        const op = { operation: 'read', id: this._generateOperationID() }
+        const pageCount = Math.ceil(data.length / F.pageSize);
+        const startTime = now();
+
         if (debug.enabled)
-            debug.info("Write %d bytes (%d pages) starting at page %d", data.length, Math.ceil(data.length / F.pageSize), page);
+            debug.info("Write %d bytes (%d pages) starting at page %d", data.length, pageCount, page);
+
+        this.emit('start', {
+            address: offset,
+            length: data.length,
+            pageCount: pageCount,
+            ...op
+        });
 
         if (this._client.canWriteBufer()) {
-            await this._writeViaBuffer(F, page, data);
+            await this._writeViaBuffer(F, page, data, op);
         } else {
-            await this._writeStandard(F, page, data);
+            await this._writeStandard(F, page, data, op);
         }
+
+        this.emit('end', {
+            duration: dur(startTime),
+            ...op
+        });
     }
 
     async readToBuffer(offset, dst) {
@@ -104,21 +120,32 @@ exports.Flasher = class Flasher extends EventEmitter {
         throw new Error("Not implemented");
     }
 
-    async _writeStandard(F, page, data) {
+    async _writeStandard(F, startPage, data, op) {
         const pageBuffer = Buffer.alloc(F.pageSize);
+        const pagesToWrite = Math.ceil(data.length / F.pageSize);
 
-        while (data.length) {
+        for (let pageIndex = 0; pageIndex < pagesToWrite; ++pageIndex) {
+            this.emit('progress', this._progressEvent(pagesToWrite, pageIndex, op));
+
             if (debug.enabled)
                 debug.info("Write page %d", page);
 
             const bytesToCopy = Math.min(data.length, F.pageSize);
             data.copy(pageBuffer, 0, 0, bytesToCopy);
             pageBuffer.fill(0x00, bytesToCopy);
+
+            const page = startPage + pageIndex;
+            
+            const writeStart = now();
+            this.emit('pagewrite:start', { page: page, ...op });
             await F.loadBuffer(pageBuffer);
             await F.writePage(page);
-            page++;
+            this.emit('pagewrite:end', { page: page, duration: dur(writeStart), ...op });
+
             data = data.slice(bytesToCopy);
         }
+
+        this.emit('progress', this._progressEvent(pagesToWrite, pagesToWrite, op));
     }
 
     async _getFlash() {
