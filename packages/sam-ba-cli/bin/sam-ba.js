@@ -1,5 +1,5 @@
 const cli = require('../');
-const {UsageError} = require('sam-ba');
+const {UsageError, debug} = require('sam-ba');
 
 const args = process.argv.slice(2);
 
@@ -19,7 +19,7 @@ while (hasNext()) {
     const arg = next();
     switch (arg) {
         case '--debug':
-            require('../src/debug').enabled = true;
+            debug.enabled = true;
             break;
         case '-p':
         case '--port':
