@@ -11,7 +11,6 @@ exports.Flasher = class Flasher {
     async erase(offset) {
         const F = await this._getFlash();
         await F.eraseAll(offset);
-        F.eraseAuto(false);
     }
 
     async write(offset, data) {
