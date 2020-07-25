@@ -10,6 +10,9 @@
     "type": "git",
     "url": "git@github.com/jaz303/sam-ba.git"
   },
+  "bin": {
+    "sam-ba": "./bin/sam-ba.js"
+  },
   "keywords": [
     "sam-ba",
     "bootloader",
