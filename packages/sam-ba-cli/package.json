@@ -1,6 +1,6 @@
 {
   "name": "@jaz303/sam-ba-cli",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "CLI interface for the Atmel SAM-BA (boot assistant)",
   "main": "index.js",
   "scripts": {
