@@ -21,5 +21,9 @@
   "license": "MIT",
   "dependencies": {
     "serialport": "^9.0.0"
-  }
+  },
+  "bugs": {
+    "url": "https://github.com/jaz303/sam-ba/issues"
+  },
+  "homepage": "https://github.com/jaz303/sam-ba#readme"
 }

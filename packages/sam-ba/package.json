@@ -1,17 +1,32 @@
 {
   "name": "sam-ba",
   "version": "1.0.0",
-  "description": "",
+  "description": "Library for interacting with the Atmel SAM-BA (boot assistant)",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Jason Frame",
+  "author": "Jason Frame <jwf@jasonframe.co.uk>",
   "license": "MIT",
   "devDependencies": {
     "serialport": "^9.0.0"
   },
   "dependencies": {
     "printf": "^0.5.3"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com/jaz303/sam-ba.git"
+  },
+  "keywords": [
+    "sam-ba",
+    "bootloader",
+    "atmel",
+    "firmware",
+    "embdedded"
+  ],
+  "bugs": {
+    "url": "https://github.com/jaz303/sam-ba/issues"
+  },
+  "homepage": "https://github.com/jaz303/sam-ba#readme"
 }
