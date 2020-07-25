@@ -23,7 +23,7 @@
   "author": "Jason Frame <jwf@jasonframe.co.uk>",
   "license": "MIT",
   "dependencies": {
-    "sam-ba": "^0.1.0",
+    "sam-ba-client": "^0.1.0",
     "sam-ba-transport-serialport": "^0.1.0",
     "serialport": "^9.0.0"
   },

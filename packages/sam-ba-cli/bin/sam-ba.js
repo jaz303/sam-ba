@@ -1,5 +1,5 @@
 const cli = require('../');
-const {UsageError, debug} = require('sam-ba');
+const {UsageError, debug} = require('sam-ba-client');
 
 const args = process.argv.slice(2);
 

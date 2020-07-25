@@ -3,7 +3,7 @@ const {
     Flasher,
     UsageError,
     debug
-} = require('sam-ba');
+} = require('sam-ba-client');
 
 const createTransport = require('sam-ba-transport-serialport');
 const SerialPort = require('serialport');

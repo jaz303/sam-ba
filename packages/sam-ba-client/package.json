@@ -1,5 +1,5 @@
 {
-  "name": "sam-ba",
+  "name": "sam-ba-client",
   "version": "0.1.0",
   "description": "Library for interacting with the Atmel SAM-BA (boot assistant)",
   "main": "index.js",
