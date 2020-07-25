@@ -1,6 +1,6 @@
 {
   "name": "sam-ba-cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "CLI interface for the Atmel SAM-BA (boot assistant)",
   "main": "index.js",
   "scripts": {
