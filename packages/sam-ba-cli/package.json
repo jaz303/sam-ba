@@ -1,6 +1,6 @@
 {
   "name": "@jaz303/sam-ba-cli",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "CLI interface for the Atmel SAM-BA (boot assistant)",
   "main": "index.js",
   "scripts": {
@@ -23,7 +23,7 @@
   "author": "Jason Frame <jwf@jasonframe.co.uk>",
   "license": "MIT",
   "dependencies": {
-    "@jaz303/sam-ba": "^1.0.4",
+    "@jaz303/sam-ba": "^1.0.5",
     "@jaz303/sam-ba-transport-serialport": "^1.0.1",
     "serialport": "^9.0.0"
   },
