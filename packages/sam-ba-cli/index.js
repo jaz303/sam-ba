@@ -72,6 +72,18 @@ exports.read = async (options) => {
         targetBuffer = Buffer.alloc(options.length);
     }
 
+    flasher.on('start', (evt) => {
+        console.log("Reading %d bytes (%d pages) from %s",
+            evt.length,
+            evt.pageCount,
+            printf("0x%08X", evt.address)
+        );
+    });
+
+    flasher.on('pageread:start', ({page}) => {
+        console.log("Reading page %d...", page);
+    });
+
     const outputBuffer = await flasher.readToBuffer(address, targetBuffer);
 
     require('fs').writeFileSync(options.args[0], outputBuffer);
