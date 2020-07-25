@@ -103,6 +103,27 @@ exports.write = async (options) => {
     }
 }
 
+exports.erase = async (options) => {
+    const client = await open(options);
+    const flasher = new Flasher(client, client.device);
+
+    const address = options.address;
+    if (typeof address !== 'number') {
+        throw new Error("Start address must be specified when erasing");
+    }
+
+    await flasher.erase(address);
+
+    if (debug.enabled)
+        debug.info("Erase complete");
+
+    if (options.reset) {
+        if (debug.enabled)
+            debug.info("Resetting...");
+        await device.reset();
+    }
+}
+
 //
 // Helpers
 
