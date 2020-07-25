@@ -3,9 +3,9 @@ const {
     Flasher,
     UsageError,
     debug
-} = require('sam-ba-client');
+} = require('@jaz303/sam-ba');
 
-const createTransport = require('sam-ba-transport-serialport');
+const createTransport = require('@jaz303/sam-ba-transport-serialport');
 const SerialPort = require('serialport');
 const printf = require('printf');
 
