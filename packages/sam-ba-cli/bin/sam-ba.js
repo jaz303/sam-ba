@@ -56,7 +56,8 @@ while (hasNext()) {
 }
 
 if (!options.action) {
-    throw new Error("No action set");
+    console.error("No command provided.\n\nValid commands: %s", Object.keys(cli).sort().join(', '));
+    process.exit(1);
 }
 
 options.action(options).then(() => {

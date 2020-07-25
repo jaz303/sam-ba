@@ -120,6 +120,9 @@ function print(input, options) {
 }
 
 async function open({serialPort, baudRate}) {
+    if (typeof serialPort !== 'string') {
+        throw new Error("Serial port must be specified with -p/--port");
+    }
     const p = new SerialPort(serialPort, {baudRate: baudRate});
     const t = createTransport(p, false);
     const c = new Client(t);
