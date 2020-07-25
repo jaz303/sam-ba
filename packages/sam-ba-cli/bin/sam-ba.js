@@ -9,7 +9,7 @@ const options = {
     action      : null,
     args        : [],
     logLevel    : 1,
-    serialPort  : null,
+    serialPort  : process.env['SAM_BA_SERIAL_PORT'] || null,
     baudRate    : 115200,
     json        : false,
     address     : null,
