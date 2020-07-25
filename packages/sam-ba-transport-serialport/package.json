@@ -1,6 +1,6 @@
 {
   "name": "@jaz303/sam-ba-transport-serialport",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Transport layer for sam-ba compatible with serialport",
   "main": "index.js",
   "scripts": {

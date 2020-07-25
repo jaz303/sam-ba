@@ -1,6 +1,6 @@
 {
   "name": "@jaz303/sam-ba",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Library for interacting with the Atmel SAM-BA (boot assistant)",
   "main": "index.js",
   "scripts": {
