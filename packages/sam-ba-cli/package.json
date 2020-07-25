@@ -1,0 +1,25 @@
+{
+  "name": "sam-ba-cli",
+  "version": "1.0.0",
+  "description": "CLI interface for the Atmel SAM-BA (boot assistant)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com/jaz303/sam-ba.git"
+  },
+  "keywords": [
+    "sam-ba",
+    "bootloader",
+    "atmel",
+    "firmware",
+    "embdedded"
+  ],
+  "author": "Jason Frame <jwf@jasonframe.co.uk>",
+  "license": "MIT",
+  "dependencies": {
+    "serialport": "^9.0.0"
+  }
+}

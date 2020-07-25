@@ -1,4 +1,8 @@
-exports.Port = class Port {
+module.exports = function createTransport(serialPort, isUSB) {
+    return new Transport(serialPort, isUSB);
+}
+
+class Transport {
     constructor(transport, isUSB) {
         this.isUSB = isUSB;
         this._transport = transport;

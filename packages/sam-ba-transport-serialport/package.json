@@ -1,0 +1,27 @@
+{
+  "name": "sam-ba-transport-serialport",
+  "version": "1.0.0",
+  "description": "Transport layer for sam-ba compatible with serialport",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/jaz303/sam-ba.git"
+  },
+  "keywords": [
+    "sam-ba",
+    "bootloader",
+    "serial",
+    "atmel",
+    "embedded",
+    "firmware"
+  ],
+  "author": "Jason Frame <jwf@jasonframe.co.uk>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jaz303/sam-ba/issues"
+  },
+  "homepage": "https://github.com/jaz303/sam-ba#readme"
+}
