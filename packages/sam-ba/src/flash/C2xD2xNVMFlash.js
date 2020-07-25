@@ -152,38 +152,36 @@ exports.C2xD2xNVMFlash = class C2xD2xNVMFlash extends BaseFlash {
         }
     }
 
-    async _erase(offset, size) {
+    async _erase(offset, minSize) {
         const eraseSize = this.pageSize * ERASE_ROW_PAGES;
 
         if ((offset % eraseSize) != 0) {
-            throw new Error("Erase offset not boundary-aligned");
+            throw new Error("Erase offset not erase boundary aligned");
         }
 
-        if ((offset + size) > this.totalSize) {
+        if ((offset + minSize) > this.totalSize) {
             throw new Error("Erase size out of bounds");
         }
 
-        const eraseEnd = Math.floor((offset + size + eraseSize - 1) / eraseSize);
+        const eraseStart = offset / eraseSize;
+        const eraseEnd = Math.floor((offset + minSize + eraseSize - 1) / eraseSize);
 
-        for (let eraseNum = offset / eraseSize; eraseNum < eraseEnd; ++eraseNum) {
-            console.log("erasing %d/%d", eraseNum, eraseEnd);
+        if (debug.enabled) {
+            debug.info("Erase start: %d", eraseStart);
+            debug.info("Erase end: %d", eraseEnd);
+        }
 
+        for (let eraseNum = eraseStart; eraseNum < eraseEnd; ++eraseNum) {
             await this._waitReady();
-
-            console.log(" - ready");
 
             // Clear error bits
             const statusReg = await this._readReg(NVM_REG_STATUS);
             await this._writeReg(NVM_REG_STATUS, statusReg | NVM_CTRL_STATUS_MASK);
 
-            console.log(" - error bits cleared");
-
             // Issue erase command
-            const wordAddr = Math.floor((eraseNum * eraseSize) / 2);
+            const wordAddr = (eraseNum * eraseSize) >> 1;
             await this._writeReg(NVM_REG_ADDR, wordAddr);
             await this._command(NVM_CMD_ER);
-
-            console.log(" - command written");
         }
     }
 }
