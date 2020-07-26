@@ -18,8 +18,8 @@ $ sam-ba <options> command <command args>
   - `-b`, `--baud`: baud rate
   - `-a`, `--address`: read/write/erase address; can be specified as hex or decimal
   - `-l`, `--length`: number of bytes to read; can be specified as hex or decimal
-  - `--reset`: reset device after command complete; applies to `write` command
-  - `--json`: request JSON output; currently supported for `info` and `settings` commands
+  - `--reset`: reset device after command complete; applies to `write`, `erase` commands
+  - `--json`: request JSON output; currently supported for `info`, `settings` commands
   - `--debug`: enable debug output (very chatty)
 
 For all commands that connect to the device, serial port must be specified, either via `-p`/`--port`, or alternatively, the environment variable `SAM_BA_SERIAL_PORT` may be set. Baud rate defaults to 115200.
