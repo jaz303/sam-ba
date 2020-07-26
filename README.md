@@ -1,6 +1,14 @@
 # sam-ba
 
-## Installation
+Package cluster for working with SAM-BA (SAM Boot Assistant).
+
+## Packages
+
+  - `@jaz303/sam-ba`: core library suitable for embedding into other applications
+  - `@jaz303/sam-ba-cli`: general purpose command line tool for interacting with SAM-BA devices
+  - `@jaz303/sam-ba-transport-serialport`: transport layer compatible with [node-serialport](https://github.com/serialport/node-serialport)
+
+## CLI Installation
 
 ```
 $ npm install -g @jaz303/sam-ba-cli
@@ -16,13 +24,13 @@ $ sam-ba <options> command <command args>
 
   - `-p`, `--port`: serial port
   - `-b`, `--baud`: baud rate
-  - `-a`, `--address`: read/write/erase address; can be specified as hex or decimal
-  - `-l`, `--length`: number of bytes to read; can be specified as hex or decimal
+  - `-a`, `--address`: read/write/erase address; may be specified as hex or decimal
+  - `-l`, `--length`: number of bytes to read; may be specified as hex or decimal
   - `--reset`: reset device after command complete; applies to `write`, `erase` commands
   - `--json`: request JSON output; currently supported for `info`, `settings` commands
   - `--debug`: enable debug output (very chatty)
 
-For all commands that connect to the device, serial port must be specified, either via `-p`/`--port`, or alternatively, the environment variable `SAM_BA_SERIAL_PORT` may be set. Baud rate defaults to 115200.
+Serial port must be specified for all commands that connect to the device, either via `-p`/`--port`, or alternatively, the `SAM_BA_SERIAL_PORT` environment variable may be set. Baud rate defaults to 115200.
 
 ## Commands
 
@@ -32,7 +40,7 @@ Display device info (e.g. name, family, flash parameters).
 
 ### `settings`
 
-Display device settings including lock regions, BOR/BOD configuration, and more. The available settings vary per device.
+Display device settings including lock regions, BOR/BOD configuration, and more. Available settings vary per device.
 
 ### `read <file>`
 
@@ -73,6 +81,7 @@ Supported options:
 
 Reset the device.
 
+---
 
 ## TODO
 
