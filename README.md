@@ -30,7 +30,7 @@ $ sam-ba <options> command <command args>
   - `--json`: request JSON output; currently supported for `info`, `settings` commands
   - `--debug`: enable debug output (very chatty)
 
-Serial port must be specified for all commands that connect to the device, either via `-p`/`--port`, or alternatively, the `SAM_BA_SERIAL_PORT` environment variable may be set. Baud rate defaults to 115200.
+Serial port must be specified for all commands that connect to the device, either via `-p`/`--port`, or alternatively, the `SAM_BA_SERIAL_PORT` environment variable may be used. Baud rate defaults to 115200.
 
 ## Commands
 
